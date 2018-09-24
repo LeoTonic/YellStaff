@@ -1,0 +1,86 @@
+{% extends "bootstrap/base.html" %}
+
+{% block title %}QMT{% endblock %}
+
+{% block head %}
+{{ super() }}
+<link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.ico') }}?ver={{ app_version }}" type="image/x-icon">
+<link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}?ver={{ app_version }}" type="image/x-icon">
+<link rel="stylesheet" href = "{{ url_for('static', filename='css/style.css') }}?ver={{ app_version }}">
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}?ver={{ app_version }}"></script>
+<script src="{{ url_for('static', filename='js/defaults-ru_RU.min.js') }}?ver={{ app_version }}"></script>
+<script type="text/javascript">
+$(document).on('ready', function() {
+    $('#feedback').on('click', function() {
+        var email1 = 'kushnarev-lya@mail.ca.sbrf.ru',
+            email2 = 'kravtsev-vs1@mail.ca.sbrf.ru',
+            email3 = 'ISU@mail.ca.sbrf.ru',
+            subject = 'YellStaff: Feedback';
+        window.location.href = "mailto:" + email3 + "?subject=" + subject + "&cc=" + email1 + "; " + email2;
+        $(this).addClass('disabled');
+    });
+});
+</script>
+{% endblock %}
+
+{% block navbar %}
+<div class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <img src="{{ url_for('static', filename='img/qmt_icon.png') }}?ver={{ app_version }}" alt="qmt_icon"/>
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">QMT</a>
+        </div>
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                {% if current_user.is_authenticated %}
+                {% if fake_user %}
+                <li><a href="javascript:;">(!) {{ fake_user.name_full }}</a></li>
+                {% else %}
+                <li><a href="javascript:;">{{ current_user.name_full }}</a></li>
+                {% endif %}
+                {% if cur_iteration %}
+                <li><a href="javascript:;"><i>{{ cur_iteration.description }}</i></a></li>
+                {% endif %}
+                {% endif %}
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                {% if current_user.is_authenticated %}
+                <li><a href="{{ url_for('auth.logout') }}">Выход</a></li>
+                {% else %}
+                <li><a href="{{ url_for('auth.login') }}">Авторизация</a></li>
+                {% endif %}
+                <li>
+                    <div class="form-group btn-group feedback-button">
+                        <button type="button" id='feedback' class="btn btn-primary">
+                            <span class="glyphicon glyphicon-envelope"></span>
+                            <span>Обратная связь</span>
+                        </button>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% for message in get_flashed_messages() %}
+    <div class="alert alert-warning">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% block page_content %}{% endblock %}
+{% endblock %}

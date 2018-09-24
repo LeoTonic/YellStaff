@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+{% block title %}
+    {% if current_user.is_authenticated %}
+    QMT - Численность
+    {% else %}
+    QMT
+    {% endif %}
+{% endblock %}
+
+{% block page_content %}
+{% if current_user.is_authenticated %}
+<div class="container total-panel">
+    <div class="row">
+        <div id="col-panel-content">
+            <div class="panel" id="control-panel">
+                <div class="panel-heading total-panel--head">
+                    <span class="total-panel--alert glyphicon" id="control-alert"></span>
+                    <span class="total-panel--label" id="control-label"></span>
+                    <span class="total-panel--control" id="control-ca">
+                        Предложение ЦА
+                        <span class="glyphicon"></span>
+                    </span>
+                    <span class="total-panel--control" id="control-tb">
+                        Перераспределение ТБ
+                        <span class="glyphicon"></span>
+                    </span>
+                    <span class="glyphicon glyphicon-chevron-down total-panel--expander"></span>
+                </div>
+                <div class="panel-body total-panel--info" id="control-content">
+                    <table class="table table-striped table-condensed">
+                        <tr>
+                            <thead>
+                                <th class="col-sm-1">Статус</th>
+                                <th class="col-sm-1">Должность</th>
+                                <th class="col-sm-2">Факт.численность<br>Кол-во ПШЕ</th>
+                                <th class="col-sm-2">Предложение ЦА<br>Кол-во ВСП</th>
+                                <th class="col-sm-2">Согласовано ТБ<br>Кол-во ВСП</th>
+                                <th class="col-sm-2">Перераспределение ТБ<br>Кол-во ВСП</th>
+                            </thead>
+                            <tbody class="report">
+                            </tbody>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div id="col-panel-approve">
+            <button type="button" id='approve-button' class="btn btn-lg btn-block">
+                <span class="btn-label">
+                    <span class="glyphicon"></span>
+                    <span class="lbl"></span>
+                </span>
+            </button>
+        </div>
+    </div>
+</div>
+<div class="container m16">
+    <div class="row">
+        <div class="col-sm-2 form-group">
+            <div class="combo-block">
+                <select id="cbo_tb" depth=1 class="selectpicker" data-width="100%" data-actions-box="true" data-live-search="true" multiple></select>
+                <div class="combo-label">Тер.Банк:</div>
+            </div>
+        </div>
+        <div class="col-sm-2 form-group">
+            <div class="combo-block">
+                <select id="cbo_gosb" depth=2 class="selectpicker" data-width="100%" data-actions-box="true" data-live-search="true" multiple></select>
+                <div class="combo-label">ГОСБ/ОСБ:</div>
+            </div>
+        </div>
+        <div class="col-sm-2 form-group">
+            <div class="combo-block">
+                <select id="cbo_rso" depth=3 class="selectpicker" data-width="100%" data-actions-box="true" data-live-search="true" multiple></select>
+                <div class="combo-label">Рук-ль сети ВСП:</div>
+            </div>
+        </div>
+        <div class="col-sm-2 form-group">
+            <div class="combo-block">
+                <select id="cbo_rgo" depth=4 class="selectpicker" data-width="100%" data-actions-box="true" data-live-search="true" multiple></select>
+                <div class="combo-label">Рук-ль группы ВСП:</div>
+            </div>
+        </div>
+        <div class="col-sm-2 form-group">
+            <div class="combo-block">
+                <div class="combo-label">Должность:</div>
+                <select id="cbo_pos" class="selectpicker" data-width="100%" multiple></select>
+            </div>
+        </div>
+        <div class="col-sm-2 form-group">
+            <div class="combo-block">
+                <div class="combo-label">Предлож. числ-ти:</div>
+                <select id="cbo_approve" class="selectpicker" data-width="100%" multiple></select>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container m16">
+    <div class="row">
+        <div class="col-sm-2 form-group hidden-xs">
+            <div class="combo-block cbo-rpp">
+                <select id="cbo_rows_page" class="selectpicker show-tick" data-width="100%">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <div class="combo-label">Строк на странице:</div>
+            </div>
+        </div>
+        <div class="col-sm-8 form-group">
+            <div class="page_navigator"></div>
+        </div>
+        <div class="col-sm-2 form-group">
+            <a class="export-excel" href="{{ url_for('main.export_excel') }}">
+                <button type="button" id="export-excel" class="btn btn-block">
+                    <span class="glyphicon glyphicon-floppy-disk"></span>
+                    <span>Экспорт в Excel</span>
+                </button>
+            </a>
+        </div>
+    </div>
+</div>
+<div class="container">
+    <table class="table">
+        <thead>
+            <tr class="bg-info">
+                <th rowspan="2" class="col-sm-2 hidden-xs">Насел.пункт</th>
+                <th rowspan="2" class="col-sm-1">ВСП</th>
+                <th rowspan="2" class="col-sm-1">Должность</th>
+                <th rowspan="2" class="col-sm-1 hidden-xs">Потенциал ПШЕ</th>
+                <th colspan="3" class="col-sm-3">Численность</th>
+                <th colspan="2" class="col-sm-2 hidden-xs hidden-sm">Направил от ТБ</th>
+                <th rowspan="2" class="col-sm-2">Риск изменения численности</th>
+            </tr>
+            <tr class="bg-info">
+                <th class="col-sm-1">Факт</th>
+                <th class="col-sm-1 text-info">Предл.ЦА</th>
+                <th class="col-sm-1 text-danger">Предл.ТБ</th>
+                <th class="col-sm-1 hidden-xs hidden-sm">ФИО</th>
+                <th class="col-sm-1 hidden-xs hidden-sm">Уровень</th>
+            </tr>
+            <tr class="total-string">
+                <th class="total hidden-xs"></th>
+                <th class="total" colspan="2">ИТОГО:</th>
+                <th class="total hidden-xs"></th>
+                <th class="total" id="outcome_actual"></th>
+                <th class="total text-info" id="outcome_propose_ca"></th>
+                <th class="total text-danger" id="outcome_propose_tb"></th>
+                <th class="total hidden-xs hidden-sm" colspan="2"></th>
+                <th class="total"></th>
+            </tr>
+        </thead>
+        <tbody id="table_content"></tbody>
+    </table>
+</div>
+<div class="container m16">
+    <div class="row">
+        <div class="col-sm-2 form-group">
+        </div>
+        <div class="col-sm-8 form-group">
+            <div class="page_navigator"></div>
+        </div>
+        <div class="col-sm-2 form-group hidden-xs">
+        </div>
+    </div>
+</div>
+<div class="form-group btn-group browse-button-dump">
+    <button type="button" id='browse-dump' class="btn btn-primary btn-lg">
+        <span class="glyphicon glyphicon-th-list hidden-xs"></span>
+        <span class="hidden-xs hidden-sm">Детали</span>
+        <span class="badge">-</span>
+    </button>
+</div>
+<div class="form-group btn-group dropup browse-button">
+    <button type="button" id="browse" class="btn btn-primary btn-lg">
+        <span class="glyphicon glyphicon-th-list hidden-xs"></span>
+        <span class="hidden-xs hidden-sm">Детали</span>
+        <span class="badge">-</span>
+    </button>
+    <button type="button" class="btn btn-primary btn-lg dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="caret"></span></button>
+    <ul class="dropdown-menu dropdown-menu-right browse"></ul>
+</div>
+<form class="browse-form" action="/browse/" method="POST"></form>
+
+<div class="modal fade" id="alertModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h3 class="modal-title" id="alertModalHeader"></h3>
+            </div>
+            <div class="modal-body">
+                <p id="alertModalContent"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn" data-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/core/helper.js') }}?ver={{ app_version }}"></script>
+<script type="text/javascript">
+// selecting modes
+var SELMODE_CONS = 0;
+var SELMODE_POS = 1;
+var SELMODE_APPROVE = 2;
+{% if current_user.is_authenticated %}
+    {% if fake_user %}
+        var USER_ROLE = {{ fake_user.role.id }};
+        var USER_ID = {{ fake_user.id }};
+    {% else %}
+        var USER_ROLE = {{ current_user.role.id }};
+        var USER_ID = {{ current_user.id }};
+    {% endif %}
+    var PROPOSE_ROLE = {{ propose_role }};
+{% else %}
+    var USER_ROLE = 0;
+    var USER_ID = 0;
+    var PROPOSE_ROLE = 0;
+{% endif %}
+
+{% if quantity_approved %}
+    var QUANTITY_APPROVED = {{ quantity_approved }};
+{% else %}
+    var QUANTITY_APPROVED = 0;
+{% endif %}
+
+// approve_modes
+var APPMODE_NONE = 0;
+var APPMODE_CA = 1;
+var APPMODE_TB = 2;
+
+var APPMODE_ARR = [];
+APPMODE_ARR[APPMODE_NONE] = 'Без изменений';
+APPMODE_ARR[APPMODE_CA] = 'Предложение ЦА';
+APPMODE_ARR[APPMODE_TB] = 'Предложение ТБ';
+
+var new_id = 1;
+var isid = 'isd_'; // input quantity identifier prefix staff_id
+var aurid = 'aurid_'; // approve user role id block
+var aunid = 'aunid_'; // approve user name id block
+var vspid = 'vspid_'; // treenode vsp id
+
+var BROWSE_LIST = []; // list of items to browse
+var BROWSE_LIST_SIZE = 10; // maximum of items in list
+
+// combo box parameters stores
+var BROWSE_PAGE = null;
+var BROWSE_CBO_TB = [];
+var BROWSE_CBO_GOSB = [];
+var BROWSE_CBO_RSO = [];
+var BROWSE_CBO_RGO = [];
+var BROWSE_CBO_POS = [];
+var BROWSE_CBO_APPROVE = [];
+var BROWSE_EXPIRATION = 3600; // store session in seconds
+
+var APPROVES_LIST = [];
+
+
+function createApprovesList() {
+{% if approves %}
+{% for approve in approves %}
+    APPROVES_LIST.push({{ approve }});
+{% endfor %}
+{% endif %}
+}
+
+function notConsolidate(level, value) {
+    if (value.length > 16) value = value.substr(0, 16) + "...";
+    return level + "-" + value + "(нет закрепления)";
+}
+
+function createTree(tree, posTree) {
+    // create new CNodes tree from backend array
+    var no_pos = '#НД';
+
+    {% if db_data %}
+    {% for record in db_data %}
+        {% if record[0].tb_name %}
+            var tb_obj = tree.add('{{ record[0].tb_name|safe }}');
+            tb_obj.setApproved({{ record[0].tb_id }});
+        {% else %}
+            var tb_obj = tree.add(notConsolidate("Банк", ""));
+        {% endif %}
+        {% if record[0].gosb_name %}
+            var gosb_obj = tb_obj.add('{{ record[0].gosb_name|safe }}');
+            gosb_obj.setApproved({{ record[0].gosb_id }});
+        {% else %}
+            var gosb_obj = tb_obj.add(notConsolidate("ТБ", tb_obj.name));
+        {% endif %}
+        {% if record[0].rsvsp_name %}
+            var rso_obj = gosb_obj.add('{{ record[0].rsvsp_name|safe }}');
+        {% else %}
+            var rso_obj = gosb_obj.add(notConsolidate("ГОСБ", gosb_obj.name));
+        {% endif %}
+        {% if record[0].rgvsp_name %}
+            var rgo_obj = rso_obj.add('{{ record[0].rgvsp_name|safe }}');
+        {% else %}
+            var rgo_obj = rso_obj.add(notConsolidate("РСО", rso_obj.name));
+        {% endif %}
+        {% if record[0].vsp_name %}
+            var vsp_obj = rgo_obj.add('{{ record[0].vsp_name|safe }}');
+        {% else %}
+            var vsp_obj = rgo_obj.add(notConsolidate("РГО", rgo_obj.name));
+        {% endif %}
+        {% if record[0].position_name %}
+            var pos_name = '{{ record[0].position_name|safe }}';
+        {% else %}
+            var pos_name = no_pos;
+        {% endif %}
+        var data_obj = vsp_obj.add(pos_name);
+        posTree.add(pos_name);
+
+        {% if record[0].city_name %} data_obj.city_name = '{{ record[0].city_name|safe }}'; {% endif %}
+        {% if record[1].quantity_potential %} data_obj.potential = {{ record[1].quantity_potential }}; {% endif %}
+        {% if record[1].quantity_actual %} data_obj.actual = {{ record[1].quantity_actual }}; {% endif %}
+        {% if record[1].quantity_propose_ca %} data_obj.propose_ca = {{ record[1].quantity_propose_ca }}; {% endif %}
+        {% if record[0].quantity_propose_tb %} data_obj.propose_tb = {{ record[0].quantity_propose_tb }}; {% endif %}
+        {% if record[0].quantity_comment %} data_obj.propose_comment = {{ record[0].quantity_comment }}; {% endif %}
+        {% if record[0].propose_user_name %} data_obj.propose_user_name = '{{ record[0].propose_user_name|safe }}'; {% endif %}
+        {% if record[0].propose_role_ccode %} data_obj.propose_role_ccode = '{{ record[0].propose_role_ccode|safe }}'; {% endif %}
+        {% if record[0].propose_role_id %} data_obj.propose_role_id = '{{ record[1].propose_role_id|safe }}'; {% endif %}
+        {% if record[1].alert_increase %} data_obj.alert_increase = '{{ record[1].alert_increase|safe }}'; {% endif %}
+        {% if record[1].alert_decrease %} data_obj.alert_decrease = '{{ record[1].alert_decrease|safe }}'; {% endif %}
+        {% if record[1].id %} data_obj.staff_id = '{{ record[1].id|safe }}'; {% endif %}
+        {% if record[0].iteration_id %} data_obj.iteration_id = '{{ record[0].iteration_id|safe }}'; {% endif %}
+        {% if record[0].id_struct_vsp %} vsp_obj.id_struct = '{{ record[0].id_struct_vsp|safe }}'; {% endif %}
+    {% endfor %}
+    {% endif %}
+}
+
+function initBrowseList(tree) {
+    BROWSE_LIST = [];
+    BROWSE_CBO_TB = [];
+    BROWSE_CBO_GOSB = [];
+    BROWSE_CBO_RSO = [];
+    BROWSE_CBO_RGO = [];
+    BROWSE_CBO_POS = [];
+    BROWSE_CBO_APPROVE = [];
+    BROWSE_PAGE = null;
+
+{% if session['browse_storetime'] %}
+    if ({{ session['browse_storetime'] }} + BROWSE_EXPIRATION < {{ start_time }}) return false;
+{% endif %}
+
+{% if session['browse_list'] %}
+{% for vsp in session['browse_list'] %}
+    var vsp_node = tree.getVSPNode('{{ vsp }}');
+    if (vsp_node && BROWSE_LIST.length < BROWSE_LIST_SIZE) {
+        if (BROWSE_LIST.add(vsp_node)) {
+            vsp_node.is_browse = true;
+            vsp_node.setChildrenBrowseValue(true);
+        }
+    }
+{% endfor %}
+{% endif %}
+
+{% if session['browse_page'] %}
+    BROWSE_PAGE = {{ session['browse_page'] }};
+{% endif %}
+
+{% if session['browse_cbo_tb'] %}
+{% for item in session['browse_cbo_tb'] %}
+    BROWSE_CBO_TB.add({{ item }});
+{% endfor %}
+{% endif %}
+
+{% if session['browse_cbo_gosb'] %}
+{% for item in session['browse_cbo_gosb'] %}
+    BROWSE_CBO_GOSB.add({{ item }});
+{% endfor %}
+{% endif %}
+
+{% if session['browse_cbo_rso'] %}
+{% for item in session['browse_cbo_rso'] %}
+    BROWSE_CBO_RSO.add({{ item }});
+{% endfor %}
+{% endif %}
+
+{% if session['browse_cbo_rgo'] %}
+{% for item in session['browse_cbo_rgo'] %}
+    BROWSE_CBO_RGO.add({{ item }});
+{% endfor %}
+{% endif %}
+
+{% if session['browse_cbo_pos'] %}
+{% for item in session['browse_cbo_pos'] %}
+    BROWSE_CBO_POS.add("{{ item }}");
+{% endfor %}
+{% endif %}
+
+{% if session['browse_cbo_approve'] %}
+{% for item in session['browse_cbo_approve'] %}
+    BROWSE_CBO_APPROVE.add({{ item }});
+{% endfor %}
+{% endif %}
+
+    return true;
+}
+
+</script>
+<script src="{{ url_for('static', filename='js/core/pager.js') }}?ver={{ app_version }}"></script>
+<script src="{{ url_for('static', filename='js/main/cnode.js') }}?ver={{ app_version }}"></script>
+<script src="{{ url_for('static', filename='js/main/app.js') }}?ver={{ app_version }}"></script>
+{% endblock %}

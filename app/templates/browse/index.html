@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}YellStaff - Показатели{% endblock %}
+{% block page_content %}
+{% if current_user.is_authenticated %}
+<div class="container m16">
+    <div class="row">
+        <div class="col-sm-2 form-group">
+            <div class="combo-block">
+                <select id="cbo_valuegroup" class="selectpicker" data-width="100%" multiple></select>
+                <div class="combo-label">Группы показателей:</div>
+            </div>
+        </div>
+        <div class="col-sm-2 form-group">
+            <div class="combo-block">
+                <select id="cbo_valueitem" class="selectpicker" data-width="100%" data-actions-box="true" data-live-search="true" multiple></select>
+                <div class="combo-label">Показатели:</div>
+            </div>
+        </div>
+        <div class="col-sm-2 form-group">
+            <div class="combo-block">
+                <select id="cbo_pos" class="selectpicker" data-width="100%" data-actions-box="true" multiple></select>
+                <div class="combo-label">Должность:</div>
+            </div>
+        </div>
+        <div class="col-sm-2 form-group">
+            <div class="combo-block">
+                <select id="cbo_vsp" class="selectpicker" data-width="100%" data-actions-box="true" multiple></select>
+                <div class="combo-label">ВСП:</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container m16">
+    <div class="row">
+        <div class="col-sm-10 form-group">
+            <div class="page_navigator"></div>
+        </div>
+        <div class="col-sm-2 form-group hidden-xs">
+            <div class="combo-block cbo-rpp">
+                <select id="cbo_rows_page" class="selectpicker show-tick" data-width="100%">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <div class="combo-label">Строк на странице:</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container">
+    <table class="table table-hover">
+        <thead id="table_head"></thead>
+        <tbody id="table_content"></tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/core/helper.js') }}?ver={{ app_version }}"></script>
+<script type="text/javascript">
+var new_id = 1; // new identifier counter
+// selecting modes
+var SELMODE_VAL = 0;
+var SELMODE_POS = 1;
+
+function createTree(tree, vsp_tree, pos_tree) {
+    var no_val = '#НД';
+{% if db_data %}
+    {% for record in db_data %}
+        {% if record[2] %}
+            var valueGroup = tree.add('{{ record[2].name_full|safe }}', '{{ record[2].name_short|safe }}');
+        {% else %}
+            var valueGroup = tree.add(no_val, no_val);
+        {% endif %}
+        {% if record[1] %}
+            var valueItem = valueGroup.add('{{ record[1].name_full|safe }}', '{{ record[1].name_short|safe }}');
+        {% else %}
+            var valueItem = valueGroup.add(no_val, no_val);
+        {% endif %}
+        {% if record[1].measurement %} valueItem.measurement = '{{ record[1].measurement|safe }}'; {% endif %}
+        {% if record[3] %}
+            var valuePos = valueItem.add('{{ record[3].name|safe }}', '{{ record[3].ccode|safe }}');
+            pos_tree.add('{{ record[3].name|safe }}', '{{ record[3].ccode|safe }}');
+        {% else %}
+            var valuePos = valueItem.add(no_val, no_val);
+            pos_tree.add(no_val, no_val);
+        {% endif %}
+        {% if record[5] %}
+            var valueVSP = valuePos.add('{{ record[5].vsp_name|safe }}', '{{ record[1].id_struct|safe }}');
+            vsp_tree.add('{{ record[5].vsp_name|safe }}', '{{ record[5].id_struct|safe }}');
+            {% if record[0] %} valueVSP.current = {{ record[0].current }}; {% endif %}
+        {% endif %}
+    {% endfor %}
+{% endif %}
+}
+
+</script>
+<script src="{{ url_for('static', filename='js/core/pager.js') }}?ver={{ app_version }}"></script>
+<script src="{{ url_for('static', filename='js/browse/cnode.js') }}?ver={{ app_version }}"></script>
+<script src="{{ url_for('static', filename='js/browse/app.js') }}?ver={{ app_version }}"></script>
+{% endblock %}

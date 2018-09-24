@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block title %}QMT - Авторизация{% endblock %}
+{% block navbar %}
+<div class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <div class="form-group btn-group feedback-button">
+                        <button type="button" id='feedback' class="btn btn-primary">
+                            <span class="glyphicon glyphicon-envelope"></span>
+                            <span>Обратная связь</span>
+                        </button>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block page_content %}
+<div class="container auth">
+    <div class="auth-header">
+        <img src="{{ url_for('static', filename='img/qmt_logo.jpg') }}?ver={{ app_version }}" alt="qmt_logo"/>
+    </div>
+    <div>
+        {{ wtf.quick_form(form) }}
+    </div>
+</div>
+<div class="auth--footer">Версия: {{ app_version }}</div>
+{% endblock %}
